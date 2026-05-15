@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1d4ed8">
+<title>우리집 체크리스트</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Malgun Gothic', sans-serif;
+    background: #f4f4f6; color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    padding-top: 16px; padding-bottom: 40px;
+    min-height: 100vh;
+  }
+  .container { max-width: 480px; margin: 0 auto; }
+
+  .header { text-align: center; padding: 8px 0 18px; }
+  .date { font-size: 13px; color: #888; }
+  .title { font-size: 24px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; }
+
+  .user-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .user-tab {
+    flex: 1; padding: 16px 0; border-radius: 14px;
+    background: #fff; text-align: center;
+    font-size: 18px; font-weight: 700;
+    cursor: pointer; border: 2px solid transparent;
+    transition: all 0.15s; color: #71717a;
+  }
+  .user-tab.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; box-shadow: 0 2px 8px rgba(29,78,216,0.25); }
+  .user-tab .name { font-size: 18px; font-weight: 700; }
+  .user-tab .count { font-size: 12px; font-weight: 500; opacity: 0.65; margin-top: 3px; }
+
+  .day-tabs {
+    display: flex; gap: 4px; margin-bottom: 14px;
+    background: #fff; padding: 4px; border-radius: 12px;
+  }
+  .day-tab {
+    flex: 1; padding: 12px 0; text-align: center;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; border-radius: 9px; color: #a1a1aa;
+    position: relative;
+  }
+  .day-tab.today { color: #1d4ed8; }
+  .day-tab.today::after {
+    content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: #1d4ed8;
+  }
+  .day-tab.active { background: #1d4ed8; color: #fff; }
+  .day-tab.active.today::after { background: #fff; }
+  .day-tab.past { color: #d4d4d8; }
+  .day-tab.past.active { background: #d4d4d8; color: #fff; }
+
+  .progress-bar {
+    height: 8px; background: #e5e7eb; border-radius: 4px;
+    overflow: hidden; margin-bottom: 12px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1d4ed8, #06b6d4);
+    transition: width 0.3s ease;
+    width: 0%;
+    border-radius: 4px;
+  }
+
+  .list { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .item {
+    display: flex; align-items: center;
+    padding: 16px 18px; border-bottom: 1px solid #f0f0f3;
+    cursor: pointer; user-select: none;
+    transition: background 0.1s;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:active { background: #f7f7fa; }
+  .item.locked { cursor: not-allowed; opacity: 0.55; }
+  .item.locked:active { background: transparent; }
+  .lock-banner {
+    background: #fef3c7; color: #92400e;
+    padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    text-align: center; margin-bottom: 10px;
+  }
+  .check {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 2px solid #d4d4d8;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 14px; flex-shrink: 0;
+    transition: all 0.15s;
+    font-size: 18px; color: transparent; font-weight: 800;
+  }
+  .item.done .check { background: #22c55e; border-color: #22c55e; color: #fff; }
+  .item.done .label { color: #a1a1aa; text-decoration: line-through; }
+  .label { font-size: 17px; flex: 1; font-weight: 500; }
+  .item .tag {
+    font-size: 11px; padding: 3px 8px; border-radius: 999px;
+    background: #fef3c7; color: #92400e;
+    margin-left: 8px; font-weight: 600;
+  }
+  .item .tag.solo { background: #dbeafe; color: #1d4ed8; }
+
+  .empty {
+    text-align: center; padding: 40px 20px;
+    color: #a1a1aa; font-size: 15px; font-weight: 500;
+  }
+
+  .summary { text-align: center; margin-top: 14px; font-size: 14px; color: #71717a; font-weight: 500; }
+  .summary strong { color: #1d4ed8; font-weight: 700; font-size: 16px; }
+
+  .banner {
+    display: none; text-align: center;
+    padding: 18px; margin-top: 14px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-radius: 16px; color: #fff;
+    font-size: 17px; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+  }
+  .banner.show { display: block; animation: pop 0.3s ease; }
+  @keyframes pop {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .share-area { margin-top: 20px; }
+  .share-main {
+    width: 100%; padding: 20px;
+    background: #fee500; color: #3c1e1e;
+    border: none; border-radius: 16px;
+    font-size: 18px; font-weight: 800;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 4px 12px rgba(254,229,0,0.4);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .share-main:active { transform: scale(0.98); }
+  .share-sub {
+    width: 100%; margin-top: 8px; padding: 12px;
+    background: #fff; color: #71717a;
+    border: 1px solid #e5e7eb; border-radius: 12px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .share-sub:active { background: #f4f4f6; }
+  .footer { margin-top: 24px; text-align: center; }
+  .reset {
+    padding: 10px 16px; background: #fff;
+    border: 1px solid #e5e7eb; border-radius: 10px;
+    color: #a1a1aa; font-size: 12px; cursor: pointer;
+    font-family: inherit;
+  }
+  .reset:active { background: #f4f4f6; }
+  .week-info { margin-top: 12px; font-size: 11px; color: #b4b4b8; }
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.85); color: #fff;
+    padding: 14px 22px; border-radius: 12px;
+    font-size: 14px; font-weight: 600;
+    z-index: 9999; opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    max-width: 90%; text-align: center; line-height: 1.5;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="date" id="date"></div>
+    <div class="title">우리집 체크리스트</div>
+  </div>
+
+  <div class="user-tabs" id="userTabs"></div>
+  <div class="day-tabs" id="dayTabs"></div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div id="lockBanner"></div>
+  <div class="list" id="list"></div>
+  <div class="summary" id="summary"></div>
+  <div class="banner" id="banner">🎉 오늘 할일 다 했어요!</div>
+
+  <div class="share-area">
+    <button class="share-main" id="shareDay">💬 엄마한테 오늘 결과 보내기</button>
+    <button class="share-sub" id="shareWeek">이번 주 전체 보내기</button>
+  </div>
+
+  <div class="footer">
+    <button class="reset" id="reset">이번 주 다시 시작</button>
+    <div class="week-info" id="weekInfo"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 분담 매트릭스 ============
+// 전담 4개: 1층청소(지율), 고양이화장실(지율), 2층청소(지안), 강아지패드(지안)
+// 공유 5개: 빨래정리, 설거지, 밀크티, 세탁기돌리기, 건조기돌리기
+// 지율 화/목만 활동 → 공유 항목 화/목엔 지율, 월/수/금엔 지안 (빨래정리만 지율 매일)
+const SCHEDULES = {
+  jiyul: {
+    mon: ['1층청소', '빨래정리', '고양이화장실'],
+    tue: ['1층청소', '빨래정리', '고양이화장실', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
+    wed: ['1층청소', '빨래정리', '고양이화장실'],
+    thu: ['1층청소', '빨래정리', '고양이화장실', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
+    fri: ['1층청소', '빨래정리', '고양이화장실']
+  },
+  jian: {
+    mon: ['2층청소', '강아지패드', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
+    tue: ['2층청소', '강아지패드'],
+    wed: ['2층청소', '강아지패드', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
+    thu: ['2층청소', '강아지패드'],
+    fri: ['2층청소', '강아지패드', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기']
+  }
+};
+
+// 전담 항목 (꼬리표 표시용)
+const SOLO_ITEMS = {
+  '1층청소': 'jiyul',
+  '고양이화장실': 'jiyul',
+  '2층청소': 'jian',
+  '강아지패드': 'jian'
+};
+
+const USERS = [
+  { id: 'jiyul', name: '지율' },
+  { id: 'jian',  name: '지안' }
+];
+const DAYS = [
+  { id: 'mon', name: '월', jsDay: 1 },
+  { id: 'tue', name: '화', jsDay: 2 },
+  { id: 'wed', name: '수', jsDay: 3 },
+  { id: 'thu', name: '목', jsDay: 4 },
+  { id: 'fri', name: '금', jsDay: 5 }
+];
+
+// ISO 주차 키 (매주 자동 새 데이터)
+function getWeekKey() {
+  const d = new Date();
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = target.valueOf();
+  target.setMonth(0, 1);
+  if (target.getDay() !== 4) {
+    target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+  }
+  const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+function storageKey() { return `chore_${getWeekKey()}`; }
+
+function getState() {
+  try {
+    const raw = localStorage.getItem(storageKey());
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return {};
+}
+
+function saveState(state) {
+  try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch(e) {}
+}
+
+function isChecked(state, user, day, item) {
+  return !!(state[user] && state[user][day] && state[user][day][item]);
+}
+
+function toggle(state, user, day, item) {
+  if (!state[user]) state[user] = {};
+  if (!state[user][day]) state[user][day] = {};
+  state[user][day][item] = !state[user][day][item];
+  return state;
+}
+
+// URL 파라미터로 사용자 자동 선택
+const params = new URLSearchParams(location.search);
+const userParam = params.get('user');
+let currentUser = userParam === 'jian' ? 'jian' : 'jiyul';
+
+// 오늘 요일 (월~금만, 토일은 월요일 디폴트)
+const todayJsDay = new Date().getDay();
+const todayDay = DAYS.find(d => d.jsDay === todayJsDay);
+let currentDay = todayDay ? todayDay.id : 'mon';
+
+// ============ 날짜 잠금 ============
+// 그 주의 해당 요일이 어느 날짜인지 계산
+function dateOfWeekDay(dayId) {
+  const now = new Date();
+  const targetJsDay = DAYS.find(d => d.id === dayId).jsDay;
+  const mondayOffset = (now.getDay() + 6) % 7; // 오늘 기준 월요일까지 며칠 전인지
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  const target = new Date(monday);
+  target.setDate(monday.getDate() + (targetJsDay - 1));
+  return target;
+}
+
+// 그 요일이 오늘보다 과거면 true (자정 지나면 자동으로 어제 → 과거)
+function isPastDay(dayId) {
+  const target = dateOfWeekDay(dayId);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return target.getTime() < today.getTime();
+}
+
+function weekTotal(userId) {
+  return DAYS.reduce((acc, d) => acc + ((SCHEDULES[userId] && SCHEDULES[userId][d.id]) || []).length, 0);
+}
+
+function weekDone(state, userId) {
+  let done = 0;
+  DAYS.forEach(d => {
+    const items = (SCHEDULES[userId] && SCHEDULES[userId][d.id]) || [];
+    items.forEach(i => { if (isChecked(state, userId, d.id, i)) done++; });
+  });
+  return done;
+}
+
+function renderUserTabs() {
+  const c = document.getElementById('userTabs');
+  c.innerHTML = '';
+  const state = getState();
+  USERS.forEach(u => {
+    const total = weekTotal(u.id);
+    const done = weekDone(state, u.id);
+    const el = document.createElement('div');
+    el.className = 'user-tab' + (u.id === currentUser ? ' active' : '');
+    el.innerHTML = `<div class="name">${u.name}</div><div class="count">${done} / ${total}개</div>`;
+    el.addEventListener('click', () => {
+      currentUser = u.id;
+      render();
+    });
+    c.appendChild(el);
+  });
+}
+
+function renderDayTabs() {
+  const c = document.getElementById('dayTabs');
+  c.innerHTML = '';
+  DAYS.forEach(d => {
+    const el = document.createElement('div');
+    const isToday = d.jsDay === todayJsDay;
+    const past = isPastDay(d.id);
+    el.className = 'day-tab'
+      + (d.id === currentDay ? ' active' : '')
+      + (isToday ? ' today' : '')
+      + (past ? ' past' : '');
+    el.textContent = d.name;
+    el.addEventListener('click', () => {
+      currentDay = d.id;
+      render();
+    });
+    c.appendChild(el);
+  });
+}
+
+function render() {
+  const now = new Date();
+  document.getElementById('date').textContent = now.toLocaleDateString('ko-KR', {
+    month: 'long', day: 'numeric', weekday: 'long'
+  });
+  document.getElementById('weekInfo').textContent = `${getWeekKey()} · 매주 월요일 새 주차`;
+
+  renderUserTabs();
+  renderDayTabs();
+
+  const state = getState();
+  const items = (SCHEDULES[currentUser] && SCHEDULES[currentUser][currentDay]) || [];
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  let done = 0;
+
+  // 과거 요일 잠금 배너
+  const locked = isPastDay(currentDay);
+  const lockBanner = document.getElementById('lockBanner');
+  if (locked) {
+    const dayName = DAYS.find(d => d.id === currentDay).name;
+    lockBanner.innerHTML = `<div class="lock-banner">🔒 지난 ${dayName}요일은 수정 못 해요</div>`;
+  } else {
+    lockBanner.innerHTML = '';
+  }
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty">이 날은 할일이 없어요</div>';
+    document.getElementById('progress').style.width = '0%';
+    document.getElementById('summary').innerHTML = `<strong>0</strong> / 0`;
+    document.getElementById('banner').classList.remove('show');
+    return;
+  }
+
+  items.forEach(item => {
+    const isDone = isChecked(state, currentUser, currentDay, item);
+    if (isDone) done++;
+    const div = document.createElement('div');
+    div.className = 'item' + (isDone ? ' done' : '') + (locked ? ' locked' : '');
+    const soloOwner = SOLO_ITEMS[item];
+    const tag = soloOwner === currentUser
+      ? `<span class="tag solo">전담</span>` : '';
+    div.innerHTML = `<div class="check">✓</div><div class="label">${item}${tag}</div>`;
+    div.addEventListener('click', () => {
+      if (locked) {
+        showToast('지난 요일은 수정할 수 없어요');
+        return;
+      }
+      const s = getState();
+      toggle(s, currentUser, currentDay, item);
+      saveState(s);
+      render();
+    });
+    list.appendChild(div);
+  });
+
+  const percent = (done / items.length) * 100;
+  document.getElementById('progress').style.width = percent + '%';
+  document.getElementById('summary').innerHTML = `<strong>${done}</strong> / ${items.length} 완료`;
+  document.getElementById('banner').classList.toggle('show', done === items.length);
+}
+
+document.getElementById('reset').addEventListener('click', () => {
+  if (confirm('이번 주 체크 전부 초기화할까요?')) {
+    localStorage.removeItem(storageKey());
+    render();
+  }
+});
+
+// ============ 공유 기능 ============
+function showToast(msg, ms = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function buildDayReport() {
+  const state = getState();
+  const userName = USERS.find(u => u.id === currentUser).name;
+  const dayName = DAYS.find(d => d.id === currentDay).name;
+  const now = new Date();
+  const items = SCHEDULES[currentUser][currentDay] || [];
+
+  let text = `📋 ${userName} ${now.getMonth()+1}/${now.getDate()}(${dayName})\n`;
+  text += `━━━━━━━━━━\n`;
+  let done = 0;
+  items.forEach(item => {
+    const checked = isChecked(state, currentUser, currentDay, item);
+    if (checked) done++;
+    text += `${checked ? '✅' : '⬜'} ${item}\n`;
+  });
+  text += `━━━━━━━━━━\n`;
+  text += `${done} / ${items.length} 완료`;
+  return text;
+}
+
+function buildWeekReport() {
+  const state = getState();
+  const userName = USERS.find(u => u.id === currentUser).name;
+  const now = new Date();
+
+  let text = `📋 ${userName} 이번 주 (${now.getMonth()+1}/${now.getDate()} 기준)\n`;
+  let totalDone = 0, totalItems = 0;
+
+  DAYS.forEach(d => {
+    const items = SCHEDULES[currentUser][d.id] || [];
+    if (items.length === 0) return;
+    let dayDone = 0;
+    let dayText = '';
+    items.forEach(item => {
+      const checked = isChecked(state, currentUser, d.id, item);
+      if (checked) dayDone++;
+      dayText += `  ${checked ? '✅' : '⬜'} ${item}\n`;
+    });
+    totalDone += dayDone;
+    totalItems += items.length;
+    text += `\n[${d.name} ${dayDone}/${items.length}]\n${dayText}`;
+  });
+
+  text += `\n━━━━━━━━━━\n총 ${totalDone} / ${totalItems} 완료`;
+  return text;
+}
+
+async function shareText(text) {
+  // 1순위: Web Share API (모바일에서 카톡 등 공유 시트 표시)
+  if (navigator.share) {
+    try {
+      await navigator.share({ text });
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return; // 사용자가 취소
+    }
+  }
+  // 2순위: 클립보드 복사
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('복사 완료! 카톡에 붙여넣어 주세요', 2800);
+    return;
+  } catch(e) {}
+  // 3순위: 옛날 방식 클립보드 복사
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('복사 완료! 카톡에 붙여넣어 주세요', 2800);
+  } catch(e) {
+    showToast('공유에 실패했어요. 카톡으로 직접 보내주세요.');
+  }
+}
+
+document.getElementById('shareDay').addEventListener('click', () => shareText(buildDayReport()));
+document.getElementById('shareWeek').addEventListener('click', () => shareText(buildWeekReport()));
+
+render();
+</script>
+</body>
+</html>
