@@ -208,11 +208,11 @@ const SCHEDULES = {
     fri: ['1층청소', '빨래정리', '고양이화장실']
   },
   jian: {
-    mon: ['2층청소', '강아지패드', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
-    tue: ['2층청소', '강아지패드'],
-    wed: ['2층청소', '강아지패드', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
-    thu: ['2층청소', '강아지패드'],
-    fri: ['2층청소', '강아지패드', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기']
+    mon: ['2층청소', '강아지패드/안약넣기/이닦기', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
+    tue: ['2층청소', '강아지패드/안약넣기/이닦기', '밀크티'],
+    wed: ['2층청소', '강아지패드/안약넣기/이닦기', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기'],
+    thu: ['2층청소', '강아지패드/안약넣기/이닦기', '밀크티'],
+    fri: ['2층청소', '강아지패드/안약넣기/이닦기', '빨래정리', '설거지', '밀크티', '세탁기돌리기', '건조기돌리기']
   }
 };
 
@@ -221,7 +221,7 @@ const SOLO_ITEMS = {
   '1층청소': 'jiyul',
   '고양이화장실': 'jiyul',
   '2층청소': 'jian',
-  '강아지패드': 'jian'
+  '강아지패드/안약넣기/이닦기': 'jian'
 };
 
 const USERS = [
@@ -515,10 +515,4 @@ async function shareText(text) {
   }
 }
 
-document.getElementById('shareDay').addEventListener('click', () => shareText(buildDayReport()));
-document.getElementById('shareWeek').addEventListener('click', () => shareText(buildWeekReport()));
-
-render();
-</script>
-</body>
-</html>
+document.getElementById('shareDay').addEventListener('click', () => sha
