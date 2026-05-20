@@ -256,21 +256,7 @@ function getWeekKey() {
 
 function storageKey() { return `chore_${getWeekKey()}`; }
 
-// localStorage 차단 환경(카톡 인앱 브라우저 등) 대비 메모리 폴백
-let memoryStore = {};
-let lsAvailable = (function(){
-  try {
-    const k = '__test__';
-    localStorage.setItem(k, '1');
-    localStorage.removeItem(k);
-    return true;
-  } catch(e) { return false; }
-})();
-
 function getState() {
-  if (!lsAvailable) {
-    return memoryStore[storageKey()] || {};
-  }
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) return JSON.parse(raw);
@@ -279,14 +265,7 @@ function getState() {
 }
 
 function saveState(state) {
-  if (!lsAvailable) {
-    memoryStore[storageKey()] = state;
-    return;
-  }
-  try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch(e) {
-    lsAvailable = false;
-    memoryStore[storageKey()] = state;
-  }
+  try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch(e) {}
 }
 
 function isChecked(state, user, day, item) {
@@ -519,4 +498,30 @@ async function shareText(text) {
   }
   // 2순위: 클립보드 복사
   try {
-    await navigator.clipboard.
+    await navigator.clipboard.writeText(text);
+    showToast('복사 완료! 카톡에 붙여넣어 주세요', 2800);
+    return;
+  } catch(e) {}
+  // 3순위: 옛날 방식 클립보드 복사
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('복사 완료! 카톡에 붙여넣어 주세요', 2800);
+  } catch(e) {
+    showToast('공유에 실패했어요. 카톡으로 직접 보내주세요.');
+  }
+}
+
+document.getElementById('shareDay').addEventListener('click', () => shareText(buildDayReport()));
+document.getElementById('shareWeek').addEventListener('click', () => shareText(buildWeekReport()));
+
+render();
+</script>
+</body>
+</html>
